@@ -33,7 +33,7 @@ def get_screenshots_and_texts(subreddit, post_number, sort="hot", top_time=None,
         print(f"{Print.red}post_number changé de {last_number} en {post_number}.{Print.end}")
         log.error(f"post_number changed from {last_number} to {post_number}.")
 
-    if (sort not in ["hot", "new", "rising"]) or (sort == "top" and top_time not in ["hour", "day", "week", "month", "year", "all"]):
+    if (sort not in ["hot", "new", "rising"]) and (sort == "top" and top_time not in ["hour", "day", "week", "month", "year", "all"]):
         print(f'{Print.red}Vous devez préciser le triage à respecter ! Votre sort = {sort}, votre top_time = {top_time} ! (sort = ["hot", "new", "top", "rising"], top_time = [None, "hour", "day", "week", "month", "year", "all"]){Print.end}')
         log.error(f'You need to precise the subreddit to scrap! Your sort = {sort}, your top_time = {top_time} ! (sort = ["hot", "new", "top", "rising"], top_time = [None, "hour", "day", "week", "month", "year", "all"])')
         return ERROR
