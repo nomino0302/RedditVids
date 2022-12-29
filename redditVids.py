@@ -25,11 +25,11 @@ def make_reddit_video(subreddit, post_number, sort="hot", top_time=None, one_by_
 
 if __name__ == "__main__":
     action  = MAKE
-    random = True
+    random = False
 
     if action == MAKE:
         if not random:
-            make_reddit_video("confession", one_by_one=True, max_timeout=30)
+            make_reddit_video("confession", 5, one_by_one=False, max_timeout=30)
         else:
             random_subs = ["confession", "AmItheAsshole", "entitledparents", "tifu", "pettyrevenge", "NuclearRevenge", "unpopularopinion", "stories" "ParanormalEncounters"]
             random_post_number = list(range(1, 9)) * 3 + list(range(9, 19)) * 2 + list(range(19, 28))
@@ -44,7 +44,7 @@ if __name__ == "__main__":
             else:
                 top_time = None
 
-            make_reddit_video(subreddit, post_number, sort, top_time, one_by_one=True, max_timeout=30)
+            make_reddit_video(subreddit, post_number, sort, top_time, one_by_one=False, max_timeout=30)
 
     elif action == CLEAR:
         clear_data(videos=True)
