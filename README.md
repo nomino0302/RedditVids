@@ -1,7 +1,7 @@
 <h1>RedditVids: storytelling video maker!🎙️</h1>
 <br>
 <h3>How to run:</h3>
-<p>    1- Install Python (3.8 >= advised (put it in PATH)) + pip if not installed with Python</p>
+<p>    1- Install Python (3.10 recommended, 3.8 >= advised (put it in PATH)) + pip if not installed with Python</p>
 <p>    2- Install Firefox (newest version advised)</p>
 <p>    3- Install Git (installation differs depending of your OS)
 <p>    4- Clone this repo (git clone https://gitfront.io/r/nomino0302/owNzYxV2vXuC/RedditVids.git)</p>

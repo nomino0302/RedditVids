@@ -29,7 +29,8 @@ invalid_chars = {
 log = createLogger("editing")
 
 @inform_logs(log)
-def make_video(subreddit, author, title):
+def make_video(subreddit, author, post_id, title):
+    log.debug(f"subreddit: {subreddit}, author: {author}, post_id: {post_id}, title: {title}")
     if not os.listdir(SCREENSHOTS):
         print(f"{Print.red}Dossier 'screenshots' vide ! Veuillez lancer la fonction get_screenshots_and_texts().{Print.end}")
         log.error("'screenshots' directory empty! Please execute get_screenshots_and_texts() function.")
@@ -48,48 +49,48 @@ def make_video(subreddit, author, title):
     print(f"🖥️ {Print.purple}Édition de la vidéo...{Print.end}")
     log.info("Starting the editing of the video")
 
-    time_per_tts = [get_length(os.path.join(TTS, file)) for file in sorted(os.listdir(TTS))]
+    time_per_tts = [get_length(os.path.join(TTS, file)) for file in sorted(os.listdir(TTS), key=lambda file: int(file[:-4]))]
     duration_tts = sum(time_per_tts)
     background_path = choice(BACKGROUND)
     music_path = choice(MUSIC)
     duration_background = get_length(background_path)
     duration_music = get_length(music_path)
-    temp_dur_tts = duration_tts
-    vid_time = duration_tts + 0.5 * len(time_per_tts)
-    temp_vid_time = vid_time
+    temp_dur_vid = duration_tts
 
     making_base_vid = True
     vids = []
     while making_base_vid:
-        if duration_background < temp_dur_tts + (0.5 * (len(time_per_tts) - 1)): # 0.5s of blank between each clips (except the first one)
+        if duration_background < temp_dur_vid:
             vids.append(mp.VideoFileClip(background_path))
-            temp_dur_tts -= duration_background
+            temp_dur_vid -= duration_background
         else:
-            vids.append(mp.VideoFileClip(background_path).subclip(0, temp_dur_tts + (0.5 * (len(time_per_tts) - 1))))
+            vids.append(mp.VideoFileClip(background_path).subclip(0, temp_dur_vid))
             making_base_vid = False
     vid = mp.concatenate_videoclips(vids)
 
+    #! La musique se joue qu'une seule fois lors des grandes videos
+    temp_dur_vid = duration_tts
     making_base_music = True
     musics = []
     while making_base_music:
-        if duration_music < temp_vid_time:
+        if duration_music < temp_dur_vid:
             musics.append(volumex(mp.AudioFileClip(music_path), 0.05))
-            temp_vid_time -= duration_music
+            temp_dur_vid -= duration_music
         else:
-            musics.append(volumex(mp.AudioFileClip(music_path).subclip(0, temp_vid_time), 0.05))
+            musics.append(volumex(mp.AudioFileClip(music_path).subclip(0, temp_dur_vid), 0.05))
             making_base_music = False
-    vid.audio = mp.CompositeAudioClip(musics)
+    vid.audio = mp.concatenate_audioclips(musics)
 
     slides = []
     for nb in range(1, len(time_per_tts) + 1):
-        screenshot = mp.ImageClip(os.path.join(SCREENSHOTS, f"{nb}.png")).set_duration(time_per_tts[nb - 1] + 0.5).set_opacity(0.95)
+        screenshot = mp.ImageClip(os.path.join(SCREENSHOTS, f"{nb}.png")).set_duration(time_per_tts[nb - 1]).set_opacity(0.95)
         tts = mp.AudioFileClip(os.path.join(TTS, f"{nb}.mp3"))
         if nb == 1:
             screenshot = screenshot.set_start(0)
-            tts = tts.set_start(0)
+            tts = tts.set_start(0).set_end(tts.duration - 0.2)
         else:
-            screenshot = screenshot.set_start(sum(time_per_tts[:nb - 2 + 1]) + 0.5 * (nb - 1))
-            tts = tts.set_start(sum(time_per_tts[:nb - 2 + 1]) + 0.5 * (nb - 1))
+            screenshot = screenshot.set_start(sum(time_per_tts[:nb - 2 + 1]))
+            tts = tts.set_start(sum(time_per_tts[:nb - 2 + 1])).set_end(sum(time_per_tts[:nb - 2 + 1]) + tts.duration - 0.2)
 
         if screenshot.w > vid.w:
             screenshot = screenshot.resize(width=vid.w)
@@ -106,7 +107,7 @@ def make_video(subreddit, author, title):
 
     if not os.path.exists(VIDS):
         os.mkdir(VIDS)
-    name = f"{subreddit} - {author} - {title}"[:60] # 255 or 256 chars is the maximum for a filename
+    name = f"{subreddit} - {author} - {post_id} - {title}"[:80] # 255 or 256 chars is the maximum for a filename
     for char in name:
         if char in invalid_chars:
             name = name.replace(char, invalid_chars[char])
@@ -115,13 +116,13 @@ def make_video(subreddit, author, title):
     while name + ".mp4" in os.listdir(VIDS):
         if first:
             first = False
-            name += f"({nb})"
+            name += f" ({nb})"
         else:
-            name = name[:-(2 + len(str(nb)))] 
+            name = name[:-(3 + len(str(nb)))] 
             nb += 1
-            name += f"({nb})"
+            name += f" ({nb})"
 
     final.write_videofile(os.path.join(VIDS, f"{name}.mp4"))
 
 if __name__ == "__main__":
-    make_video("confession", "me", "the title")
+    make_video("confession", "me", "1234azerty", "the title")

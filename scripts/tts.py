@@ -22,6 +22,7 @@ log = createLogger("tts")
 
 @inform_logs(log)
 def texts_to_tts(list_of_texts, one_by_one=True, max_timeout=30):
+    log.debug(f"list_of_texts: {list_of_texts}, one_by_one: {one_by_one}, max_timeout: {max_timeout}")
     if not list_of_texts: # Liste vide
         print(f"{Print.red}La liste de textes doit au moins contenir 1 texte !{Print.end}")
         log.error("The list of texts need to have at least 1 text!")
@@ -39,8 +40,29 @@ def texts_to_tts(list_of_texts, one_by_one=True, max_timeout=30):
         texts_numbers[str(num)] = text # num = nom du fichier (1.mp3 par exemple)
         num += 1
     
-    min_files = 1
+    global max_files
     max_files = len(texts_numbers)
+
+    essai(texts_numbers, one_by_one, max_timeout)
+
+    test_passed, diff_nb = are_mp3_all_here()
+    if not test_passed:
+        print(f"{Print.blue}2ème essai :{Print.end}")
+        new_texts_numbers = {}
+        for nb, text in texts_numbers.items():
+            if nb in diff_nb:
+                new_texts_numbers[nb] = text
+        essai(new_texts_numbers, one_by_one, max_timeout)
+
+        test_passed, diff_nb = are_mp3_all_here()
+        if not test_passed:
+            return ERROR
+
+    print(f"{Print.green}Tous les audio ont été enregistrés avec succès !{Print.end}")
+    log.info("All the audio files have been saved successfully!")
+
+@inform_logs(log)
+def essai(texts_numbers, one_by_one=True, max_timeout=30):
     global checkpoints
     checkpoints = 12 * max_files
     global check_done # check_done = nombre de checkpoints passés
@@ -80,15 +102,16 @@ def texts_to_tts(list_of_texts, one_by_one=True, max_timeout=30):
                     print(f"{Print.red}Une erreur inattendue est survenue pendant l'exécution de get_mp3 : {err}{Print.end}")
                     log.critical(f"An unexpected error occurred while get_mp3 execution: {err}", exc_info=True)
 
-    wanted_list = [f"{num}.mp3" for num in range(min_files, max_files + 1)]
+def are_mp3_all_here():
+    wanted_list = [f"{num}.mp3" for num in range(1, max_files + 1)]
     tts_list = os.listdir(TTS)
     if Counter(tts_list) != Counter(wanted_list): # Same values but not in the same order
-        print(f"{Print.red}Des pistes audio sont manquantes :{Print.end} {Print.bold}{[file for file in wanted_list if file not in tts_list]}{Print.end}")
-        log.error(f"Some audio files are missing: {[file for file in wanted_list if file not in tts_list]}")
-        return ERROR
+        diff = [file for file in wanted_list if file not in tts_list]
+        print(f"{Print.red}Des pistes audio sont manquantes :{Print.end} {Print.bold}{diff}{Print.end}")
+        log.error(f"Some audio files are missing: {diff}")
+        return False, [nb.replace(".mp3", "") for nb in diff]
     else:
-        print(f"{Print.green}Tous les audio ont été enregistrés avec succès !{Print.end}")
-        log.info("All the audio files have been saved successfully!")
+        return True, []
 
 @inform_logs(log)
 def get_mp3(text, filename, max_timeout):
@@ -120,7 +143,9 @@ def get_mp3(text, filename, max_timeout):
         if (time() - start_time) >= max_timeout:
             return TIMEOUT
         try:
-            driver.execute_script(f'document.getElementsByClassName("cdx-block")[0].innerText = "{text}";')
+            if not text:
+                text = "-"
+            driver.execute_script(f'document.getElementsByClassName("cdx-block")[0].innerText = `{text}`;')
             break
         except JavascriptException:
             sleep(0.1)
