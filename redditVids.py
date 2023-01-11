@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
     if action == MAKE:
         if not random:
-            make_reddit_video("stories", 16, sort="rising", one_by_one=False, max_timeout=60)
+            make_reddit_video("entitledparents", 16, url="https://www.reddit.com/r/entitledparents/comments/cr7dc9/my_family_is_pressuring_me_to_give_my_23f_sister/", sort="rising", one_by_one=False, max_timeout=60)
         else:
             random_subs = ["confession", "AmItheAsshole", "entitledparents", "tifu", "pettyrevenge", "NuclearRevenge", "unpopularopinion", "stories", "ParanormalEncounters"]
             random_post_number = list(range(0, 9)) * 3 + list(range(9, 19)) * 2 + list(range(19, 28))

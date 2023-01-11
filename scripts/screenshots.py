@@ -58,6 +58,8 @@ def get_screenshots_and_texts(subreddit, post_number, url=None, sort="hot", top_
     options = Options()
     options.headless = True
     options.set_preference("media.volume_scale", "0.0")
+    options.set_preference('intl.accept_languages', 'en-US, en')
+    options.set_preference('layout.css.devPixelsPerPx','3.0') # this sets high resolution
     options.set_preference("dom.webnotifications.enabled", False)
     options.set_preference("devtools.selfxss.count", 100)
     driver = webdriver.Firefox(options=options)
@@ -208,7 +210,6 @@ def get_screenshots_and_texts(subreddit, post_number, url=None, sort="hot", top_
     post_id = driver.current_url.replace("https://", "").split("/")[4]
 
     while True:
-        #! Getting the comments bar (bottom bar)?
         if (time() - start_time) >= max_timeout:
             return TIMEOUT
         try:
@@ -218,6 +219,7 @@ def get_screenshots_and_texts(subreddit, post_number, url=None, sort="hot", top_
             header_elem = driver.find_elements(By.CLASS_NAME, "_14-YvdFiW5iVvfe5wdgmET")[0]
             title_elem = driver.find_elements(By.CLASS_NAME, "_2FCtq-QzlfuN-SwVMUZMM3")[0]
             tags_elem = driver.find_elements(By.CLASS_NAME, "_2fiIRtMpITeCAzXc4cANKp")
+            footer_elem = driver.find_elements(By.CLASS_NAME, "_1hwEKkB_38tIoal6fcdrt9")[0]
             author_elem = header_elem.find_elements(By.TAG_NAME, "a")[0]
 
             title = title_elem.text
@@ -229,19 +231,21 @@ def get_screenshots_and_texts(subreddit, post_number, url=None, sort="hot", top_
             title_elem.screenshot(os.path.join(SCREENSHOTS, "title.png"))
             if tags_elem:
                 tags_elem[0].screenshot(os.path.join(SCREENSHOTS, "tags.png"))
+            footer_elem.screenshot(os.path.join(SCREENSHOTS, "footer.png"))
 
             break
         except (IndexError, JavascriptException, AssertionError):
             sleep(0.1)
 
     # Making 1.png
-    to_delete = ["banner.png", "upvotes.png", "header.png", "title.png"]
+    to_delete = ["banner.png", "upvotes.png", "header.png", "title.png", "footer.png"]
     if tags_elem:
         to_delete.append("tags.png")
     banner_img = Image.open(os.path.join(SCREENSHOTS, "banner.png"))
     upvotes_img = Image.open(os.path.join(SCREENSHOTS, "upvotes.png"))
     header_img = Image.open(os.path.join(SCREENSHOTS, "header.png"))
     title_img = Image.open(os.path.join(SCREENSHOTS, "title.png"))
+    footer_img = Image.open(os.path.join(SCREENSHOTS, "footer.png"))
     widths = [header_img.width, title_img.width]
     heights = [upvotes_img.height, header_img.height + title_img.height]
     if tags_elem:
@@ -252,7 +256,7 @@ def get_screenshots_and_texts(subreddit, post_number, url=None, sort="hot", top_
     max_width = max(widths)
     max_height = max(heights)
     rgb_background = (26, 26, 27)
-    new_image = Image.new("RGB", (max([upvotes_img.width + max_width, banner_img.width]), banner_img.height + max_height), rgb_background)
+    new_image = Image.new("RGB", (max([upvotes_img.width + max_width, banner_img.width, footer_img.width]), banner_img.height + max_height + footer_img.height), rgb_background)
 
     if new_image.width <= banner_img.width:
         new_image.paste(banner_img, (0, 0))
@@ -263,6 +267,10 @@ def get_screenshots_and_texts(subreddit, post_number, url=None, sort="hot", top_
     new_image.paste(title_img, (upvotes_img.width, banner_img.height + header_img.height))
     if tags_elem:
         new_image.paste(tags_img, (upvotes_img.width, banner_img.height + header_img.height + title_img.height))
+        # Footer
+        new_image.paste(footer_img, (0, banner_img.height + header_img.height + title_img.height + tags_img.height))
+    else:
+        new_image.paste(footer_img, (0, banner_img.height + header_img.height + title_img.height))
     new_image.save(os.path.join(SCREENSHOTS, "1.png"), "PNG")
 
     for file in to_delete:
@@ -302,9 +310,11 @@ if __name__ == "__main__":
     value = get_screenshots_and_texts("entitledparents", 0, url="https://www.reddit.com/r/entitledparents/comments/cr7dc9/my_family_is_pressuring_me_to_give_my_23f_sister/")
     if value == TIMEOUT:
         print("TIMEOUT!")
-    texts, author, post_id, title = value[0], value[1], value[2], value[3]
-    print(f"Author : {author}\n")
-    print(f"Post ID : {post_id}")
-    print(f"Title : {title}\n")
-    for nb, elt in enumerate(texts):
-        print(f"{nb + 1} : {elt}\n")
+    printing = False
+    if printing:
+        texts, author, post_id, title = value[0], value[1], value[2], value[3]
+        print(f"Author : {author}\n")
+        print(f"Post ID : {post_id}")
+        print(f"Title : {title}\n")
+        for nb, elt in enumerate(texts):
+            print(f"{nb + 1} : {elt}\n")
