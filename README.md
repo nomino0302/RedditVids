@@ -1,3 +1,5 @@
+<h2>⚠️ This project doesn't work anymore since Reddit changed their UI! ⚠️</h2>
+<br>
 <h1>RedditVids: storytelling video maker!🎙️</h1>
 <br>
 <h3>How to run:</h3>
